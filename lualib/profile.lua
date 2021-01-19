@@ -11,7 +11,7 @@ local old_co_create = coroutine.create
 local old_co_wrap = coroutine.wrap
 
 
-function coroutine.create(f)
+function _G.coroutine.create(f)
     return old_co_create(function (...)
             mark()
             return f(...)
@@ -19,7 +19,7 @@ function coroutine.create(f)
 end
 
 
-function coroutine.wrap(f)
+function _G.coroutine.wrap(f)
     return old_co_wrap(function (...)
             mark()
             return f(...)
