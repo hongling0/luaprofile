@@ -290,6 +290,8 @@ _get_profile(lua_State* L) {
     lua_rawgetp(L, LUA_REGISTRYINDEX, (void *)&KEY);
     struct profile_context* addr = (struct profile_context*)lua_touserdata(L, -1);
     lua_pop(L, 1);
+    if(addr == NULL)
+        luaL_error(L, "expected a profile_context but got a %s @%d", luaL_typename(L, -1), -1);
     return addr;
 }
 
@@ -585,6 +587,13 @@ _ldump(lua_State* L) {
 }
 
 static int
+_lgc(lua_State *L) {
+    struct profile_context* context = lua_touserdata(L, 1);
+    profile_free(context);
+    return 0;
+}
+
+static int
 _linit(lua_State* L) {
     struct profile_context* context = _get_profile(L);
     if(context) {
@@ -592,6 +601,10 @@ _linit(lua_State* L) {
     }
 
     context = profile_create();
+    lua_createtable(L, 0, 1);
+    lua_pushcfunction(L, _lgc);
+    lua_setfield(L, -2, "__gc");
+    lua_setmetatable(L, -2);
 
     // init registry
     lua_pushlightuserdata(L, context);
@@ -603,7 +616,6 @@ static int
 _ldestory(lua_State* L) {
     struct profile_context* context = _get_profile(L);
     if(context) {
-        profile_free(context);
 
         // reset registry
         lua_pushlightuserdata(L, (void *)&KEY);
